@@ -9,9 +9,10 @@
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "type": "commonjs",
+  "type": "module",
   "dependencies": {
     "leaflet": "^1.9.4",
+    "leaflet-geosearch": "^4.2.2",
     "leaflet.markercluster": "^1.5.3"
   }
 }
