@@ -1,0 +1,30 @@
+body {
+    font-family: sans-serif;
+    /* Makes it so that map takes up full screen */
+    margin: 0;
+    padding: 0;
+}
+
+/* Define width and height for the map container so it can render */
+/* Modify this if you just want to include in a section of the website */
+#map {
+    width: 100%;
+    height: 100vh;
+}
+
+.cluster-div {
+    background-color: #fff;
+    height: 3rem;
+    width: 3rem;
+    border-radius: 50%;
+    box-shadow: 0 0 0px 4px;
+
+    /* Make it actually on top of the cluster */
+    transform: translate(-50%, -50%);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+
+    font-size: 1.5rem;
+    font-weight: bold;
+}
