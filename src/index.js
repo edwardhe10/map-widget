@@ -15,47 +15,20 @@ const customIcon = L.icon({
 })
 
 // Leaflet essentially works in layers. The markers are a layer on top of the map and the clusters are another layer on top of the markers
-
-// add markers
-//var marker = L.marker([51.5, -0.08], { icon: customIcon }).addTo(map);
-// var marker = L.marker([51.5, -0.08]).addTo(map);
-// var marker = L.marker([51.51, -0.09]).addTo(map);
-// var marker = L.marker([51.5, -0.1]).addTo(map);
-
-//console.log(window === L);
-// Cluster layer
-// const myClusterLayer = L.markerClusterGroup({
-//     iconCreateFunction: function (cluster) {
-//         const markers = cluster.getAllChildMarkers();
-
-//         let up = 0;
-//         let down = 0;
-
-//         markers.forEach(marker => {
-//             if (marker.data) {
-//                 up += marker.data.elevatorsUp || 0;
-//                 down += marker.data.elevatorsDown || 0;
-//             }
-//         });
-        
-//         return L.divIcon({
-//             html: `<div class="cluster-div">` + cluster.getChildCount() + `</div>
-//                 <div class="cluster-up">🟢 ${up}</div>
-//                 <div class="cluster-down">🔴 ${down}</div>`
-//         })
-//     }
-// });
+//let bounds = null;
+let selectedMarkers = new Map(); // key => value (id => { marker properties })
 
 const myClusterLayer = L.markerClusterGroup({
     iconCreateFunction: function (cluster) {
         const markers = cluster.getAllChildMarkers();
 
-        let up = 0;
+        let running = 0;
         let down = 0;
 
+        // Sum up number of elevators running and down for the markers in the cluster
         markers.forEach(marker => {
             if (marker.data) {
-                up += marker.data.elevatorsUp || 0;
+                running += marker.data.elevatorsRunning || 0;
                 down += marker.data.elevatorsDown || 0;
             }
         });
@@ -65,7 +38,7 @@ const myClusterLayer = L.markerClusterGroup({
                 <div class="cluster-root">
                     <div class="cluster-count">${cluster.getChildCount()}</div>
                     <div class="cluster-stats">
-                        <div class="cluster-up">🟢 ${up}</div>
+                        <div class="cluster-running">🟢 ${running}</div>
                         <div class="cluster-down">🔴 ${down}</div>
                     </div>
                 </div>
@@ -78,87 +51,96 @@ const myClusterLayer = L.markerClusterGroup({
     }
 });
 
-// add markers
+// Fetch from database and create markers
+fetch("get-markers.php")
+    .then(res => res.json())
+    .then(data => {
+        const markers = [];
+
+        data.forEach(row => {
+            const marker = L.marker([row.latitude, row.longitude]);
+
+            marker.data = {
+                id: row.id,
+                address: row.address,
+                elevatorsRunning: row.elevators_running,
+                elevatorsDown: row.elevators_down
+            };
+            
+            marker.bindPopup(`<div class="popup-content">
+                <h3>Address: ${marker.data.address}</h3><br>
+                🟢 Running: ${marker.data.elevatorsRunning}<br>
+                🔴 Down: ${marker.data.elevatorsDown}
+                <label>
+                    <input type="checkbox" class="marker-select" data-id="${marker.data.id}">Select
+                </label>
+                </div>
+            `);
+            // optional to add { closeOnClick: false }
+
+            // marker.on("click", function () {
+            //     map.setView(marker.getLatLng(), 16);
+            // });
+
+            marker.on("popupopen", function () {
+                const checkbox = document.querySelector(`.marker-select[data-id="${marker.data.id}"]`);
+
+                // restore checked state if already selected
+                if (selectedMarkers.has(marker.data.id)) {
+                    checkbox.checked = true;
+                }
+                else {
+                    checkbox.checked = false;
+                }
+
+                checkbox.addEventListener("change", function () {
+                    if (this.checked) {
+                        selectedMarkers.set(marker.data.id, {
+                            id: marker.data.id,
+                            address: row.address,
+                            lat: row.latitude,
+                            lng: row.longitude
+                        });
+                    } 
+                    else {
+                        selectedMarkers.delete(marker.data.id);
+                    }
+                    updateSelectedPanel();
+                });
+            });
+
+            myClusterLayer.addLayer(marker);
+            markers.push(marker);
+        });
+        map.addLayer(myClusterLayer);
+
+        if (markers.length > 0) {
+            //const bounds = myClusterLayer.getBounds();
+            bounds = L.latLngBounds(markers.map(m => m.getLatLng()));
+            map.fitBounds(bounds, { padding: [50, 50] });
+        }
+    })
+    .catch(err => {
+        console.error("Failed to load markers:", err);
+    });
+
+// add markers ** (not used)
 function createMarker(lat, lng, data = null) {
     const marker = L.marker([lat, lng]);
     marker.data = data;
     return marker;
 }
 
-const marker1 = createMarker(51.5, -0.08, {
-    address: "123 address street",
-    elevatorsUp: 4,
-    elevatorsDown: 2
-});
+function updateSelectedPanel() {
+    const list = document.getElementById("selected-list");
+    list.innerHTML = "";
 
-const marker2 = createMarker(51.51, -0.09, {
-    address: "Marker 2",
-    elevatorsUp: 3,
-    elevatorsDown: 1
-});
-
-const marker3 = createMarker(51.5, -0.1, {
-    address: "Marker 3",
-    elevatorsUp: 5,
-    elevatorsDown: 0
-});
-
-const marker4 = createMarker(51.53, -0.1, {
-    address: "Marker 4",
-    elevatorsUp: 2,
-    elevatorsDown: 2
-});
-
-const marker5 = createMarker(43.47, -80.54, {
-    address: "Marker 5",
-    elevatorsUp: 6,
-    elevatorsDown: 1
-});
-
-const marker6 = createMarker(43.46, -80.54, {
-    address: "Marker 6",
-    elevatorsUp: 4,
-    elevatorsDown: 0
-});
-const marker7 = createMarker(64.13, -21.80, {
-    address: "Marker 7",
-    elevatorsUp: 4,
-    elevatorsDown: 1
-});
-// To do: change to array
-// const marker1 = L.marker([51.5, -0.08]);
-// marker1.data = {
-//     address: "123 address street",
-//     elevatorsUp: 4,
-//     elevatorsDown: 2
-// };
-// //console.log("Marker data: ", marker1.data);
-// const marker2 = L.marker([51.51, -0.09]);
-// const marker3 = L.marker([51.5, -0.1]);
-// const marker4 = L.marker([51.53, -0.1]);
-// const marker5 = L.marker([43.47, -80.54]);
-// const marker6 = L.marker([43.46, -80.54]);
-
-myClusterLayer.addLayer(marker1);
-myClusterLayer.addLayer(marker2);
-myClusterLayer.addLayer(marker3);
-myClusterLayer.addLayer(marker4);
-myClusterLayer.addLayer(marker5);
-myClusterLayer.addLayer(marker6);
-myClusterLayer.addLayer(marker7);
-map.addLayer(myClusterLayer);
-
-// Add click event to zoom to marker
-// To do: change to array
-[marker1, marker2, marker3, marker4, marker5].forEach(marker => {
-    marker.on('click', function() {
-        map.setView(marker.getLatLng(), 16);
+    selectedMarkers.forEach(marker => {
+        const li = document.createElement("li");
+        li.textContent = marker.address;
+        list.appendChild(li);
     });
-});
-
-// Fit map to show all markers
-const bounds = myClusterLayer.getBounds();
-map.fitBounds(bounds, { padding: [50, 50] });
+}
 
 // Add a button to refocus on all markers
 const refitButton = L.control({ position: 'topright' });
@@ -170,11 +152,18 @@ refitButton.onAdd = function(map) {
 };
 refitButton.addTo(map);
 
-// Add popups
-marker1.bindPopup(`<h3>Address: ${marker1.data.address}</h3><br>
-    🟢 Running: ${marker1.data.elevatorsUp}<br>
-    🔴 Down: ${marker1.data.elevatorsDown}`);
-marker2.bindPopup("<h3>Address for marker 2</h3>");
+document.getElementById("submit-selected").addEventListener("click", function () {
+    if (selectedMarkers.size === 0) {
+        alert("No markers selected");
+        return;
+    }
+
+    const data = Array.from(selectedMarkers.values()); // only values
+
+    document.getElementById("markers-input").value = JSON.stringify(data); // set the value for the input
+
+    document.getElementById("marker-form").submit(); // submit the form
+});
 
 // can add skins to your map. search leaflet skins
 // leaflet-providers

@@ -13,7 +13,18 @@
     <link rel="stylesheet" href="src/styles.css">
 </head>
 <body>
-    <div id="map"></div>
+    <?php require __DIR__ . '/inc/functions.inc.php'; ?>
+    <?php require __DIR__ . '/db/db-connect.php'; ?>
+    <div id="map">
+        <div id="selection-panel">
+            <h3>Selected Addresses</h3>
+            <ul id="selected-list"></ul>
+            <form id="marker-form" method="post" action="submit-selected-markers.php">
+                <input type="hidden" name="markers" id="markers-input">
+            </form>
+            <button id="submit-selected">Submit</button>
+        </div>
+    </div>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
         integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
         crossorigin=""></script>

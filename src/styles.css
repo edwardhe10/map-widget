@@ -56,10 +56,35 @@ body {
     line-height: 1.1;
 }
 
-.cluster-up {
+.cluster-running {
     color: #2e7d32;
 }
 
 .cluster-down {
     color: #c62828;
+}
+
+#selection-panel {
+    position: absolute;
+    bottom: 20px;
+    left: 20px;
+    background: white;
+    padding: 12px;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+    max-width: 250px;
+    z-index: 1000;
+}
+
+#selected-list {
+    max-height: 150px;
+    overflow-y: auto;
+    padding-left: 18px;
+    font-size: 14px;
+}
+
+.marker {
+    border: 1px solid #ccc;
+    padding: 10px;
+    margin-bottom: 10px;
 }
