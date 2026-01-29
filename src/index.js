@@ -70,7 +70,6 @@ const clusterLayer = L.markerClusterGroup({
             className: "", // to prevent default leaflet CSS
 
             iconSize: [70, 70],
-            iconAnchor: [35, 35], // center it properly
         })
     }
 });
@@ -164,6 +163,7 @@ function updateSelectedPanel() {
     });
 }
 
+// Handle when the Submit button for selected markers is clicked
 document.getElementById("submit-selected").addEventListener("click", function () {
     if (selectedMarkers.size === 0) {
         alert("No markers selected");
@@ -181,7 +181,7 @@ document.getElementById("submit-selected").addEventListener("click", function ()
     })
     .then(res => res.text())
     .then(html => {
-        document.getElementById("selected-results").innerHTML = html;
+        document.getElementById("selected-results").innerHTML = html; // Inject the HTML
     });
     modal.style.display = "none";
 });
@@ -206,6 +206,10 @@ const searchControl = new GeoSearch.GeoSearchControl({
 });
 
 map.addControl(searchControl);
+
+var latlngs = [[37, -109.05],[41, -109.03],[41, -102.05],[37, -102.04]];
+
+var polygon = L.polygon(latlngs, {color: 'red'}).addTo(map);
 
 // document.getElementById("submit-selected").onclick = () => {
 //     fetch("submit-selected-markers.php", {
