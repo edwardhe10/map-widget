@@ -1,24 +1,48 @@
-// initialize the map
-// google leaflet zoom levels
-//const map = L.map("map").setView([51.505, -0.09], 13); // setView(center, zoom)
-const map = L.map("map");
+// Modal
+const modal = document.getElementById("mapModal"); // Get the modal
+const openBtn = document.getElementById("openMapBtn"); // Get the button that opens the modal
+const closeBtn = document.getElementById("closeMapBtn"); // Get the button that closes the modal
+
+openBtn.onclick = () => {
+    modal.style.display = "block";
+
+    // Tell Leaflet to recalculate map layout since container size changed
+    map.invalidateSize();
+
+    // Refit to bounds on modal open
+    if (bounds) {
+        map.fitBounds(bounds, { padding: [50, 50] });
+    }
+};
+
+closeBtn.onclick = () => {
+    modal.style.display = "none";
+};
+
+// Close when the user clicks anywhere outside of the modal
+modal.onclick = (e) => {
+    if (e.target === modal) {
+        modal.style.display = "none";
+    }
+};
+
+// Map
+const map = L.map("map"); // Initialize the map
 
 L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
     maxZoom: 19, 
     attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
 }).addTo(map);
 
-// custom icon
-const customIcon = L.icon({
-    iconUrl: "https://cdn-icons-png.flaticon.com/512/447/447031.png",
-    iconSize: [38, 38]
-})
-
 // Leaflet essentially works in layers. The markers are a layer on top of the map and the clusters are another layer on top of the markers
-//let bounds = null;
-let selectedMarkers = new Map(); // key => value (id => { marker properties })
 
-const myClusterLayer = L.markerClusterGroup({
+let selectedMarkers = new Map(); // key => value (id => { marker properties })
+// Fast lookup by ID, no dupes, easy add/remove
+
+const clusterLayer = L.markerClusterGroup({
+    //spiderfyOnMaxZoom: false,
+    showCoverageOnHover: false,
+    //zoomToBoundsOnClick: true,
     iconCreateFunction: function (cluster) {
         const markers = cluster.getAllChildMarkers();
 
@@ -43,10 +67,10 @@ const myClusterLayer = L.markerClusterGroup({
                     </div>
                 </div>
             `,
-            className: "",
+            className: "", // to prevent default leaflet CSS
 
             iconSize: [70, 70],
-            iconAnchor: [35, 35],   // center it properly
+            iconAnchor: [35, 35], // center it properly
         })
     }
 });
@@ -58,7 +82,7 @@ fetch("get-markers.php")
         const markers = [];
 
         data.forEach(row => {
-            const marker = L.marker([row.latitude, row.longitude]);
+            const marker = L.marker([row.latitude, row.longitude]); // Create marker with its location
 
             marker.data = {
                 id: row.id,
@@ -76,30 +100,35 @@ fetch("get-markers.php")
                 </label>
                 </div>
             `);
-            // optional to add { closeOnClick: false }
-
+            // Optional to add { closeOnClick: false }
+            
+            // Marker onclick zooming
             // marker.on("click", function () {
             //     map.setView(marker.getLatLng(), 16);
             // });
 
             marker.on("popupopen", function () {
+                // Find the checkbox with class marker-select and attribute data-id = marker ID
                 const checkbox = document.querySelector(`.marker-select[data-id="${marker.data.id}"]`);
 
-                // restore checked state if already selected
+                // Restore checked state if already selected
                 if (selectedMarkers.has(marker.data.id)) {
                     checkbox.checked = true;
                 }
                 else {
                     checkbox.checked = false;
                 }
-
+                
+                // Handle the form changes
                 checkbox.addEventListener("change", function () {
                     if (this.checked) {
                         selectedMarkers.set(marker.data.id, {
                             id: marker.data.id,
-                            address: row.address,
-                            lat: row.latitude,
-                            lng: row.longitude
+                            address: marker.data.address,
+                            lat: row.latitude, // maybe not needed. maybe also add to marker.data
+                            lng: row.longitude,
+                            elevatorsRunning: marker.data.elevatorsRunning,
+                            elevatorsDown: marker.data.elevatorsDown
                         });
                     } 
                     else {
@@ -108,15 +137,14 @@ fetch("get-markers.php")
                     updateSelectedPanel();
                 });
             });
-
-            myClusterLayer.addLayer(marker);
-            markers.push(marker);
+            clusterLayer.addLayer(marker); // Add marker to the cluster layer
+            markers.push(marker); // Add marker to the markers array
         });
-        map.addLayer(myClusterLayer);
+        map.addLayer(clusterLayer); // Add the cluster layer to the map
 
         if (markers.length > 0) {
-            //const bounds = myClusterLayer.getBounds();
-            bounds = L.latLngBounds(markers.map(m => m.getLatLng()));
+            // Get bounds to fit all markers on map
+            bounds = L.latLngBounds(markers.map(marker => marker.getLatLng()));
             map.fitBounds(bounds, { padding: [50, 50] });
         }
     })
@@ -124,17 +152,11 @@ fetch("get-markers.php")
         console.error("Failed to load markers:", err);
     });
 
-// add markers ** (not used)
-function createMarker(lat, lng, data = null) {
-    const marker = L.marker([lat, lng]);
-    marker.data = data;
-    return marker;
-}
-
 function updateSelectedPanel() {
     const list = document.getElementById("selected-list");
-    list.innerHTML = "";
+    list.innerHTML = ""; // Deletes all child elements (inside <ul>)
 
+    // Recreate <li> elements
     selectedMarkers.forEach(marker => {
         const li = document.createElement("li");
         li.textContent = marker.address;
@@ -142,33 +164,39 @@ function updateSelectedPanel() {
     });
 }
 
-// Add a button to refocus on all markers
-const refitButton = L.control({ position: 'topright' });
-refitButton.onAdd = function(map) {
-    const div = L.DomUtil.create('button', 'refit-button'); // Create HTML <button> with class="refit-button"
-    div.innerHTML = "Refit"; // Set button text
-    div.onclick = () => map.fitBounds(bounds, { padding: [50, 50] }); // onClick handler
-    return div;
-};
-refitButton.addTo(map);
-
 document.getElementById("submit-selected").addEventListener("click", function () {
     if (selectedMarkers.size === 0) {
         alert("No markers selected");
         return;
     }
 
-    const data = Array.from(selectedMarkers.values()); // only values
+    // const data = Array.from(selectedMarkers.values()); // Convert only the values to an array
 
-    document.getElementById("markers-input").value = JSON.stringify(data); // set the value for the input
-
-    document.getElementById("marker-form").submit(); // submit the form
+    // document.getElementById("markers-input").value = JSON.stringify(data); // Set the value attribute for the input (converted to JSON string)
+    // document.getElementById("marker-form").submit(); // Submit the form
+    fetch("submit-selected-markers.php", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" }, // Indicate that the body is in JSON
+        body: JSON.stringify(Array.from(selectedMarkers.values()))
+    })
+    .then(res => res.text())
+    .then(html => {
+        document.getElementById("selected-results").innerHTML = html;
+    });
+    modal.style.display = "none";
 });
 
-// can add skins to your map. search leaflet skins
-// leaflet-providers
+// Add a button to refocus on all markers
+const refitButton = L.control({ position: 'bottomright' });
+refitButton.onAdd = function(map) {
+    const div = L.DomUtil.create('button', 'refit-button'); // Create HTML <button> with class="refit-button"
+    div.innerHTML = "Refit"; // Set button text
+    div.onclick = () => map.fitBounds(bounds, { padding: [50, 50] }); // onclick handler
+    return div;
+};
+refitButton.addTo(map);
 
-// Search button with autoloading
+// Search feature with autoloading
 const provider = new GeoSearch.OpenStreetMapProvider();
 
 const searchControl = new GeoSearch.GeoSearchControl({
@@ -178,3 +206,17 @@ const searchControl = new GeoSearch.GeoSearchControl({
 });
 
 map.addControl(searchControl);
+
+// document.getElementById("submit-selected").onclick = () => {
+//     fetch("submit-selected-markers.php", {
+//         method: "POST",
+//         headers: { "Content-Type": "application/json" },
+//         body: JSON.stringify({
+//             markers: Array.from(selectedMarkers.values())
+//         })
+//     })
+//     .then(res => res.text())
+//     .then(html => {
+//         document.getElementById("selected-results").innerHTML = html;
+//     });
+// };

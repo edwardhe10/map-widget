@@ -15,16 +15,25 @@
 <body>
     <?php require __DIR__ . '/inc/functions.inc.php'; ?>
     <?php require __DIR__ . '/db/db-connect.php'; ?>
-    <div id="map">
-        <div id="selection-panel">
-            <h3>Selected Addresses</h3>
-            <ul id="selected-list"></ul>
-            <form id="marker-form" method="post" action="submit-selected-markers.php">
-                <input type="hidden" name="markers" id="markers-input">
-            </form>
-            <button id="submit-selected">Submit</button>
+    <button id="openMapBtn">Open Map</button>
+
+    <div id="mapModal" class="modal">
+        <div class="modal-content">
+            <span id="closeMapBtn" class="close">&times;</span>
+            <div id="map">
+                <div id="selection-panel">
+                    <h3>Selected Addresses</h3>
+                    <ul id="selected-list"></ul>
+                    <form id="marker-form" method="POST" action="submit-selected-markers.php">
+                        <input type="hidden" name="markers" id="markers-input">
+                    </form>
+                    <button id="submit-selected">Submit</button>
+                </div>
+            </div>
         </div>
     </div>
+    <div id="selected-results"></div>
+    
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
         integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
         crossorigin=""></script>

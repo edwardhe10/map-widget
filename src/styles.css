@@ -1,15 +1,12 @@
 body {
     font-family: sans-serif;
-    /* Makes it so that map takes up full screen */
-    margin: 0;
-    padding: 0;
 }
 
 /* Define width and height for the map container so it can render */
 /* Modify this if you just want to include in a section of the website */
 #map {
     width: 100%;
-    height: 100vh;
+    height: 100%;
 }
 
 .cluster-div {
@@ -87,4 +84,43 @@ body {
     border: 1px solid #ccc;
     padding: 10px;
     margin-bottom: 10px;
+}
+
+/* Modal overlay */
+/* Background */
+.modal {
+    display: none;
+    position: fixed;
+    inset: 0;
+    /* inset is equivalent to: */
+    /*
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    */
+    background-color: rgba(0,0,0,0.4); /* Dims the page behind */
+    z-index: 9999;
+}
+
+/* Content/Box */
+.modal-content {
+    position: relative;
+    width: 85%;
+    height: 85%;
+    margin: 4% auto;
+    /* background-color: #fefefe; */
+    /* background: #fff; */
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+/* Modal close button */
+.close {
+    position: absolute;
+    top: 8px;
+    right: 12px;
+    font-size: 28px;
+    cursor: pointer;
+    z-index: 10000;
 }
