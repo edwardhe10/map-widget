@@ -169,11 +169,11 @@ document.getElementById("submit-selected").addEventListener("click", function ()
         alert("No markers selected");
         return;
     }
-
     // const data = Array.from(selectedMarkers.values()); // Convert only the values to an array
 
     // document.getElementById("markers-input").value = JSON.stringify(data); // Set the value attribute for the input (converted to JSON string)
     // document.getElementById("marker-form").submit(); // Submit the form
+
     fetch("submit-selected-markers.php", {
         method: "POST",
         headers: { "Content-Type": "application/json" }, // Indicate that the body is in JSON
@@ -183,7 +183,7 @@ document.getElementById("submit-selected").addEventListener("click", function ()
     .then(html => {
         document.getElementById("selected-results").innerHTML = html; // Inject the HTML
     });
-    modal.style.display = "none";
+    modal.style.display = "none"; // Close modal when submitted
 });
 
 // Add a button to refocus on all markers
@@ -207,20 +207,17 @@ const searchControl = new GeoSearch.GeoSearchControl({
 
 map.addControl(searchControl);
 
-var latlngs = [[37, -109.05],[41, -109.03],[41, -102.05],[37, -102.04]];
-
-var polygon = L.polygon(latlngs, {color: 'red'}).addTo(map);
-
-// document.getElementById("submit-selected").onclick = () => {
-//     fetch("submit-selected-markers.php", {
-//         method: "POST",
-//         headers: { "Content-Type": "application/json" },
-//         body: JSON.stringify({
-//             markers: Array.from(selectedMarkers.values())
-//         })
-//     })
-//     .then(res => res.text())
-//     .then(html => {
-//         document.getElementById("selected-results").innerHTML = html;
-//     });
-// };
+fetch('ontario.geo.json')
+  .then(res => res.json())
+  .then(data => {
+    L.geoJSON(data, {
+      style: {
+        color: 'red'
+      },
+      onEachFeature: function (feature, layer) {
+        if (feature.properties && feature.properties.tags && feature.properties.tags.name) {
+            layer.bindPopup(feature.properties.tags.name);
+        }
+      }
+    }).addTo(map);
+  });

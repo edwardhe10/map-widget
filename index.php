@@ -24,9 +24,9 @@
                 <div id="selection-panel">
                     <h3>Selected Addresses</h3>
                     <ul id="selected-list"></ul>
-                    <form id="marker-form" method="POST" action="submit-selected-markers.php">
+                    <!-- <form id="marker-form" method="POST" action="submit-selected-markers.php">
                         <input type="hidden" name="markers" id="markers-input">
-                    </form>
+                    </form> -->
                     <button id="submit-selected">Submit</button>
                 </div>
             </div>

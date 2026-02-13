@@ -18,7 +18,9 @@ $data = json_decode($rawData, true); // Decode and convert to assoc array
             <strong>Latitude:</strong> <?php echo e($marker['lat']) ?><br>
             <strong>Longitude:</strong> <?php echo e($marker['lng']) ?><br>
             <strong>Elevators Running:</strong> <?php echo e($marker['elevatorsRunning']) ?><br>
-            <strong>Elevators Down:</strong> <?php echo e($marker['elevatorsDown']) ?>
+            <strong>Elevators Down:</strong> <?php echo e($marker['elevatorsDown']) ?><br>
+            <strong>Elevator 1</strong><br>
+            <strong>Elevator 2...</strong>
         </div>
     <?php endforeach; ?>
 <?php endif; ?>
